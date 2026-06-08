@@ -1,0 +1,25 @@
+All experiments were conducted on a MacBook Air with Apple M1 processor (8GB RAM) using Python 3.13, PyTorch 2.12, DeepXDE 1.15, and the neuraloperator library. The finite difference solver, PINN solver, and FNO were implemented from scratch and are publicly available at github.com/manishpaulish/seismic-benchmark.
+
+Finite Difference Baseline
+
+FD runtime is essentially flat across the full 5 to 80Hz frequency range, varying by less than 18 percent between the slowest and fastest runs. This frequency independence arises because the explicit leap-frog time-stepping scheme advances the wavefield one time step at a time regardless of the dominant source frequency. The solver achieves machine precision accuracy by construction, satisfying the wave equation to floating-point tolerance at every grid point and time step. On the layered velocity model with four horizontal layers at 1800, 2500, 3200, and 4000 m/s, FD runtime remains within 5 percent of the homogeneous baseline, confirming that solver complexity is independent of velocity model heterogeneity.
+
+PINN Benchmark
+
+PINNs fail catastrophically at every frequency in the exploration seismology range. The slowdown relative to FD ranges from 1,814 times at 10Hz to 2,909 times at 80Hz, with runtime increasing at higher frequencies due to the more complex loss landscape. Amplitude errors range from 26,000 times to 534,825 times the FD reference, indicating that the PINN solution bears no physical resemblance to the true wavefield.
+
+The failure mechanism is spectral bias. The initial condition loss stagnates at approximately 0.76 from training step 500 onward, regardless of source frequency. The PDE residual loss decreases steadily, indicating that the network is minimising PDE violations while completely failing to satisfy the initial conditions. This pattern is consistent with the known tendency of neural networks to preferentially learn low-frequency solution components, which prevents them from reproducing the sharp Gaussian pulse at the source location. The failure is therefore fundamental. Additional training iterations and hyperparameter adjustments do not resolve it.
+
+FNO Benchmark on Homogeneous Medium
+
+At 5Hz and 10Hz, the FNO achieves engineering-grade accuracy with relative L2 errors of 0.91 percent and 1.79 percent respectively. The FNO prediction at 5Hz is visually indistinguishable from the FD reference, with errors concentrated near the source point and two orders of magnitude smaller than the signal amplitude. Training convergence shows consistent monotonic improvement from 6.13 percent at epoch 50 to 1.77 percent at epoch 200, in sharp contrast to PINN stagnation.
+
+At 20Hz and above, FNO training fails to converge. Investigation reveals a previously undocumented failure mode: amplitude degeneracy in the training data. At 20Hz, the maximum wavefield amplitude across all 300 training samples falls in the range 3.28 to 3.31 times ten to the power of negative six, a variation of less than 1 percent. When training data targets are near-uniform in amplitude, the MSE loss surface becomes flat and gradient-based optimisation stalls. This is distinct from PINN spectral bias and represents a practical limitation of operator learning for high-frequency seismic simulation.
+
+FNO Benchmark on Layered Velocity Model
+
+FNO performance degrades substantially on the layered model. At 5Hz, L2 error increases 36-fold from 0.91 percent to 32.4 percent. At 10Hz, training fails entirely with validation L2 remaining at 1.0 throughout 200 epochs. The reflections and refractions introduced by geological layering increase the effective complexity of the wavefield operator, pushing the 10Hz layered case into the same failure regime as the 20Hz homogeneous case. In practice, this means FNO requires separate training for each velocity model, and even with retraining it fails at exploration-relevant frequencies in geologically realistic media.
+
+Summary
+
+FD solves every frequency in under 25ms with machine precision and shows no dependence on velocity model complexity. PINNs fail at every frequency tested with slowdowns exceeding 1,800 times. FNOs succeed only in a narrow regime: frequencies below 15Hz in homogeneous media with sufficient training data amplitude diversity. Outside this regime, FNO fails due to amplitude degeneracy, a failure mode that is mechanistically distinct from PINN spectral bias but equally limiting in practice.

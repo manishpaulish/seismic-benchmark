@@ -1,0 +1,77 @@
+Related Work
+
+Numerical Methods for Seismic Simulation
+
+Finite difference methods have been the standard tool for seismic
+wavefield simulation since the 1970s. Second-order and
+higher-order stencils for the acoustic and elastic wave equations
+are well established, and their stability conditions, dispersion
+properties, and boundary treatment are thoroughly documented.
+Absorbing boundary conditions, including sponge layers and
+perfectly matched layers, are standard practice for preventing
+spurious reflections at domain boundaries. The computational cost
+of FD scales linearly with the number of grid points and time
+steps, making it predictable and well understood for production
+applications. This paper uses a standard second-order explicit FD
+scheme as the reference solver against which neural approaches
+are evaluated.
+
+Physics-Informed Neural Networks
+
+Raissi et al. (2019) introduced physics-informed neural networks,
+demonstrating that neural networks could solve forward and inverse
+problems governed by PDEs by embedding the governing equations
+directly into the training loss. Since this foundational work,
+PINNs have been applied to a wide range of problems in fluid
+mechanics, heat transfer, and solid mechanics. Their application
+to seismic wave equations has been explored by several groups.
+Waheed et al. (2021) applied PINNs to the eikonal equation for
+travel time computation. Smith et al. (2021) used PINNs for
+acoustic wave propagation in simple homogeneous domains. Alkhalifah
+et al. (2021) applied Fourier feature PINNs to seismic wavefield
+simulation, reporting improved accuracy at moderate frequencies
+compared to standard PINNs. These studies generally test narrow
+frequency ranges and simple velocity models. None provide a
+systematic characterisation of failure modes across the full
+exploration seismology frequency range.
+
+Grossmann et al. (2024) conducted the most rigorous existing
+comparison of PINNs against classical numerical methods, evaluating
+PINNs against the finite element method for the Poisson, Allen-Cahn,
+and semilinear Schrodinger equations. Their central finding was
+that PINNs could not outperform FEM in solution time or accuracy
+for any problem tested. The present paper extends this line of
+inquiry to wave equations and includes FNOs as a third comparator,
+neither of which was addressed in Grossmann et al.
+
+Fourier Neural Operators
+
+Li et al. (2021) introduced the Fourier Neural Operator,
+demonstrating that neural networks operating in the Fourier domain
+could learn solution operators for PDEs with strong generalisation
+across different initial conditions and forcing terms. FNOs
+achieved state-of-the-art performance on Navier-Stokes fluid
+dynamics benchmarks and attracted substantial follow-on work.
+Several papers have applied FNOs and related neural operator
+architectures to geophysical problems. Yin et al. (2022) applied
+FNOs to subsurface flow simulation. Yang et al. (2023) used
+neural operators for seismic velocity model building. However,
+a systematic evaluation of FNO accuracy and failure modes for
+seismic wavefield simulation across a range of frequencies and
+velocity models has not been published. The present paper provides
+this evaluation and identifies the amplitude degeneracy failure
+mode that limits FNO applicability at high frequencies.
+
+Spectral Bias
+
+The tendency of neural networks to preferentially learn
+low-frequency components of target functions, known as spectral
+bias or frequency principle, was theoretically characterised by
+Rahaman et al. (2019) and Tancik et al. (2020). Tancik et al.
+proposed Fourier feature embeddings as a mitigation, showing that
+mapping inputs through random Fourier features before network
+processing allows learning of high-frequency functions. This
+mitigation has been incorporated into several PINN variants for
+wave problems but has not been demonstrated to resolve the
+initial condition convergence failure identified in this paper
+across the full 5 to 80Hz exploration range.

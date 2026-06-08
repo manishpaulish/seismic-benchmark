@@ -1,0 +1,283 @@
+WHEN DO NEURAL APPROACHES OUTPERFORM FINITE DIFFERENCES FOR SEISMIC WAVEFIELD SIMULATION? A SYSTEMATIC COMPARISON OF PINNs, FOURIER NEURAL OPERATORS, AND CLASSICAL SOLVERS
+
+Manish Paul
+Department of Geology and Geophysics
+Indian Institute of Technology Kharagpur
+manishpaul.24@kgpian.iitkgp.ac.in
+
+ABSTRACT
+
+
+1. INTRODUCTION
+
+Introduction
+
+Seismic wavefield simulation is a computational bottleneck in exploration geophysics. Full waveform inversion, the leading method for subsurface velocity model estimation, requires solving the wave equation thousands of times per survey to match observed seismic data with synthetic predictions. At exploration-relevant frequencies of 5 to 80Hz and domain sizes of kilometres, each finite difference solve takes seconds to minutes on production hardware, making the total inversion computationally expensive. The search for faster solvers that maintain physical accuracy has driven significant interest in neural network approaches.
+
+Physics-informed neural networks (PINNs) were introduced by Raissi et al. (2019) as a method for solving partial differential equations by minimising a loss function that penalises PDE residuals and boundary condition violations. Unlike data-driven approaches, PINNs require no training data and embed physical constraints directly into the network architecture. Since their introduction, PINNs have been applied to a wide range of PDEs in fluid dynamics, heat transfer, and solid mechanics. Several groups have applied PINNs to seismic wave equations, reporting encouraging results for simple velocity models at low frequencies.
+
+Fourier Neural Operators (FNOs) were introduced by Li et al. (2021) as a method for learning solution operators between function spaces. Rather than solving a specific PDE instance, FNOs learn a mapping from input functions, such as initial conditions or source configurations, to output functions, such as the resulting wavefield. FNOs operate in the Fourier domain, enabling efficient representation of spatial correlations. They have demonstrated strong performance on fluid dynamics problems and have attracted attention as potential surrogates for expensive numerical solvers.
+
+Despite this activity, the comparative performance of PINNs, FNOs, and classical numerical solvers for seismic wavefield simulation across the full exploration frequency range has not been systematically studied. Grossmann et al. (2024) conducted a rigorous comparison of PINNs against the finite element method for several canonical PDEs including the Poisson, Allen-Cahn, and Schrodinger equations, finding that PINNs could not outperform FEM in solution time or accuracy. Their study did not include wave equations or FNOs. Several papers have applied PINNs or Fourier feature variants to seismic problems, but these studies typically test a narrow frequency range, use simplified velocity models, and do not include FNOs as a comparator. The specific failure modes of each neural approach across the exploration seismology frequency range remain uncharacterised.
+
+This paper addresses that gap by presenting the first three-way benchmark comparing standard PINNs, FNOs, and classical finite difference solvers for the 2D acoustic wave equation across five frequencies from 5 to 80Hz and two velocity models of increasing geological complexity. The benchmark identifies five distinct findings, including a previously undocumented FNO failure mode caused by training data amplitude degeneracy at high frequencies, and a substantial FNO performance degradation on layered velocity models. The results provide practical guidance for researchers and practitioners choosing between neural and classical approaches for seismic simulation, and identify the specific failure mechanisms that future work must address to make neural surrogates viable across the full exploration frequency range.
+
+The paper is organised as follows. Section 2 describes the three solvers, the velocity models, and the evaluation metrics. Section 3 presents experimental results across all frequency and velocity model combinations. Section 4 discusses the failure mechanisms identified and their implications for future neural solver development. Section 5 concludes.
+
+2. RELATED WORK
+
+Related Work
+
+Numerical Methods for Seismic Simulation
+
+Finite difference methods have been the standard tool for seismic
+wavefield simulation since the 1970s. Second-order and
+higher-order stencils for the acoustic and elastic wave equations
+are well established, and their stability conditions, dispersion
+properties, and boundary treatment are thoroughly documented.
+Absorbing boundary conditions, including sponge layers and
+perfectly matched layers, are standard practice for preventing
+spurious reflections at domain boundaries. The computational cost
+of FD scales linearly with the number of grid points and time
+steps, making it predictable and well understood for production
+applications. This paper uses a standard second-order explicit FD
+scheme as the reference solver against which neural approaches
+are evaluated.
+
+Physics-Informed Neural Networks
+
+Raissi et al. (2019) introduced physics-informed neural networks,
+demonstrating that neural networks could solve forward and inverse
+problems governed by PDEs by embedding the governing equations
+directly into the training loss. Since this foundational work,
+PINNs have been applied to a wide range of problems in fluid
+mechanics, heat transfer, and solid mechanics. Their application
+to seismic wave equations has been explored by several groups.
+Waheed et al. (2021) applied PINNs to the eikonal equation for
+travel time computation. Smith et al. (2021) used PINNs for
+acoustic wave propagation in simple homogeneous domains. Alkhalifah
+et al. (2021) applied Fourier feature PINNs to seismic wavefield
+simulation, reporting improved accuracy at moderate frequencies
+compared to standard PINNs. These studies generally test narrow
+frequency ranges and simple velocity models. None provide a
+systematic characterisation of failure modes across the full
+exploration seismology frequency range.
+
+Grossmann et al. (2024) conducted the most rigorous existing
+comparison of PINNs against classical numerical methods, evaluating
+PINNs against the finite element method for the Poisson, Allen-Cahn,
+and semilinear Schrodinger equations. Their central finding was
+that PINNs could not outperform FEM in solution time or accuracy
+for any problem tested. The present paper extends this line of
+inquiry to wave equations and includes FNOs as a third comparator,
+neither of which was addressed in Grossmann et al.
+
+Fourier Neural Operators
+
+Li et al. (2021) introduced the Fourier Neural Operator,
+demonstrating that neural networks operating in the Fourier domain
+could learn solution operators for PDEs with strong generalisation
+across different initial conditions and forcing terms. FNOs
+achieved state-of-the-art performance on Navier-Stokes fluid
+dynamics benchmarks and attracted substantial follow-on work.
+Several papers have applied FNOs and related neural operator
+architectures to geophysical problems. Yin et al. (2022) applied
+FNOs to subsurface flow simulation. Yang et al. (2023) used
+neural operators for seismic velocity model building. However,
+a systematic evaluation of FNO accuracy and failure modes for
+seismic wavefield simulation across a range of frequencies and
+velocity models has not been published. The present paper provides
+this evaluation and identifies the amplitude degeneracy failure
+mode that limits FNO applicability at high frequencies.
+
+Spectral Bias
+
+The tendency of neural networks to preferentially learn
+low-frequency components of target functions, known as spectral
+bias or frequency principle, was theoretically characterised by
+Rahaman et al. (2019) and Tancik et al. (2020). Tancik et al.
+proposed Fourier feature embeddings as a mitigation, showing that
+mapping inputs through random Fourier features before network
+processing allows learning of high-frequency functions. This
+mitigation has been incorporated into several PINN variants for
+wave problems but has not been demonstrated to resolve the
+initial condition convergence failure identified in this paper
+across the full 5 to 80Hz exploration range.
+
+3. METHODOLOGY
+
+Methodology
+
+Acoustic Wave Equation
+
+All solvers target the 2D acoustic wave equation:
+
+d2u/dt2 = c(x,z)^2 * (d2u/dx2 + d2u/dz2)
+
+where u(x,z,t) is the pressure wavefield, c(x,z) is the P-wave velocity model, and (x,z,t) denotes spatial and temporal coordinates. The source term is a Ricker wavelet injected at a single grid point:
+
+f(t) = (1 - 2*(pi*f0*tau)^2) * exp(-(pi*f0*tau)^2)
+
+where tau = t - 1/f0 is the time shifted relative to the dominant frequency f0. Experiments use f0 in {5, 10, 20, 40, 80} Hz, covering the full exploration seismology range used in oil and gas subsurface imaging.
+
+Velocity Models
+
+Two velocity models are used. The homogeneous model assigns a constant P-wave velocity of 2000 m/s throughout the domain, providing an analytically tractable baseline where the wavefield solution is a known function of source location and time. The layered model uses four horizontal layers with velocities of 1800, 2500, 3200, and 4000 m/s from surface to depth, representative of shallow sedimentary sequences overlying consolidated basement rock. Layer boundaries are placed at equal depth intervals. Velocity contrasts at each boundary produce reflected and refracted waves not present in the homogeneous case, increasing the complexity of the wavefield operator that each method must represent.
+
+Finite Difference Solver
+
+The FD solver uses a second-order accurate explicit finite difference scheme in both space and time, commonly known as the leap-frog scheme. The spatial Laplacian is approximated using central differences:
+
+d2u/dx2 ≈ (u[x+1,z] - 2u[x,z] + u[x-1,z]) / dx^2
+
+with an equivalent approximation for d2u/dz2. Time stepping follows:
+
+u_next = 2*u_curr - u_prev + dt^2 * c^2 * (d2u/dx2 + d2u/dz2)
+
+Stability is enforced by the CFL condition dt * c_max * sqrt(1/dx^2 + 1/dz^2) less than or equal to 0.5. The CFL number was 0.4243 for the homogeneous model and 0.4525 for the layered model. A sponge absorbing boundary layer of 30 grid points on each side damps outgoing waves and prevents spurious reflections from the computational domain edges. All homogeneous experiments use a 256 by 256 grid with dx = dz = 10m. FNO training data uses a 64 by 64 grid with dx = dz = 20m to reduce data generation time. The FD solver is implemented in NumPy and serves as the ground truth reference for all accuracy measurements.
+
+PINN Solver
+
+The PINN minimises a composite loss function over the spatiotemporal domain [0, L] by [0, L] by [0, T] where L = 1280m and T = 0.3s. The loss combines three terms. The PDE residual loss penalises violations of the wave equation at randomly sampled collocation points inside the domain. The initial condition loss penalises deviation from the prescribed Gaussian displacement field and zero initial velocity at t = 0. The boundary condition loss enforces zero displacement at the four domain boundaries. The network is a fully connected network with input dimension 3 (x, z, t), four hidden layers of 64 neurons each with tanh activation, and output dimension 1. Training uses 10,000 collocation points, 2,000 boundary condition points, and 2,000 initial condition points. The Adam optimiser runs for 5,000 iterations with learning rate 0.001 and loss weights of 1, 100, and 10 for the PDE, initial condition, and boundary condition terms respectively. The implementation uses DeepXDE 1.15 with the PyTorch backend.
+
+Fourier Neural Operator
+
+The FNO learns the solution operator mapping source location configurations to wavefield snapshots. Training data consists of 300 pairs of source location maps and corresponding FD wavefields, generated by running the FD solver with randomly sampled source positions within the upper quarter of the domain. Source location maps are Gaussian functions centred at the source point, providing a smooth spatial encoding of source position. Wavefield targets are normalised by the global maximum amplitude across the training set before training. The FNO architecture uses 16 Fourier modes in each spatial dimension, 64 hidden channels, and 4 Fourier layers. Training uses the Adam optimiser with cosine annealing over 200 epochs, batch size 16, weight decay 0.0001, and absolute mean squared error loss. The implementation uses the neuraloperator library version 2.0. Inference time is measured as the wall-clock time for a single forward pass on the trained model, averaged over 10 source locations. All experiments run on Apple M1 with Metal Performance Shaders (MPS) acceleration.
+
+Evaluation Metrics
+
+Three metrics are used. Runtime measures wall-clock time in seconds for the FD solver and in seconds for PINN training, and in milliseconds for FNO inference. Relative L2 error measures the normalised difference between the predicted and reference wavefields:
+
+L2 = ||u_pred - u_FD|| / ||u_FD||
+
+where the norm is the Frobenius norm over the spatial grid at the final time step. Amplitude error measures the ratio of maximum absolute predicted amplitude to maximum absolute FD amplitude, providing an intuitive measure of physical accuracy. For the PINN, the initial condition loss value at convergence is also reported as a diagnostic for spectral bias.
+
+4. RESULTS
+
+All experiments were conducted on a MacBook Air with Apple M1 processor (8GB RAM) using Python 3.13, PyTorch 2.12, DeepXDE 1.15, and the neuraloperator library. The finite difference solver, PINN solver, and FNO were implemented from scratch and are publicly available at github.com/manishpaulish/seismic-benchmark.
+
+Finite Difference Baseline
+
+FD runtime is essentially flat across the full 5 to 80Hz frequency range, varying by less than 18 percent between the slowest and fastest runs. This frequency independence arises because the explicit leap-frog time-stepping scheme advances the wavefield one time step at a time regardless of the dominant source frequency. The solver achieves machine precision accuracy by construction, satisfying the wave equation to floating-point tolerance at every grid point and time step. On the layered velocity model with four horizontal layers at 1800, 2500, 3200, and 4000 m/s, FD runtime remains within 5 percent of the homogeneous baseline, confirming that solver complexity is independent of velocity model heterogeneity.
+
+PINN Benchmark
+
+PINNs fail catastrophically at every frequency in the exploration seismology range. The slowdown relative to FD ranges from 1,814 times at 10Hz to 2,909 times at 80Hz, with runtime increasing at higher frequencies due to the more complex loss landscape. Amplitude errors range from 26,000 times to 534,825 times the FD reference, indicating that the PINN solution bears no physical resemblance to the true wavefield.
+
+The failure mechanism is spectral bias. The initial condition loss stagnates at approximately 0.76 from training step 500 onward, regardless of source frequency. The PDE residual loss decreases steadily, indicating that the network is minimising PDE violations while completely failing to satisfy the initial conditions. This pattern is consistent with the known tendency of neural networks to preferentially learn low-frequency solution components, which prevents them from reproducing the sharp Gaussian pulse at the source location. The failure is therefore fundamental. Additional training iterations and hyperparameter adjustments do not resolve it.
+
+FNO Benchmark on Homogeneous Medium
+
+At 5Hz and 10Hz, the FNO achieves engineering-grade accuracy with relative L2 errors of 0.91 percent and 1.79 percent respectively. The FNO prediction at 5Hz is visually indistinguishable from the FD reference, with errors concentrated near the source point and two orders of magnitude smaller than the signal amplitude. Training convergence shows consistent monotonic improvement from 6.13 percent at epoch 50 to 1.77 percent at epoch 200, in sharp contrast to PINN stagnation.
+
+At 20Hz and above, FNO training fails to converge. Investigation reveals a previously undocumented failure mode: amplitude degeneracy in the training data. At 20Hz, the maximum wavefield amplitude across all 300 training samples falls in the range 3.28 to 3.31 times ten to the power of negative six, a variation of less than 1 percent. When training data targets are near-uniform in amplitude, the MSE loss surface becomes flat and gradient-based optimisation stalls. This is distinct from PINN spectral bias and represents a practical limitation of operator learning for high-frequency seismic simulation.
+
+FNO Benchmark on Layered Velocity Model
+
+FNO performance degrades substantially on the layered model. At 5Hz, L2 error increases 36-fold from 0.91 percent to 32.4 percent. At 10Hz, training fails entirely with validation L2 remaining at 1.0 throughout 200 epochs. The reflections and refractions introduced by geological layering increase the effective complexity of the wavefield operator, pushing the 10Hz layered case into the same failure regime as the 20Hz homogeneous case. In practice, this means FNO requires separate training for each velocity model, and even with retraining it fails at exploration-relevant frequencies in geologically realistic media.
+
+Summary
+
+FD solves every frequency in under 25ms with machine precision and shows no dependence on velocity model complexity. PINNs fail at every frequency tested with slowdowns exceeding 1,800 times. FNOs succeed only in a narrow regime: frequencies below 15Hz in homogeneous media with sufficient training data amplitude diversity. Outside this regime, FNO fails due to amplitude degeneracy, a failure mode that is mechanistically distinct from PINN spectral bias but equally limiting in practice.
+
+5. DISCUSSION AND CONCLUSION
+
+Discussion
+
+The results reveal two mechanistically distinct failure modes that 
+limit the applicability of neural approaches to seismic wavefield 
+simulation.
+
+The first is spectral bias in PINNs. Neural networks trained with 
+gradient descent preferentially learn low-frequency components of 
+the target function, a phenomenon documented theoretically by 
+Rahaman et al. (2019) and Tancik et al. (2020). For the acoustic 
+wave equation, this manifests as an inability to reproduce the 
+sharp Gaussian source pulse at t = 0. The initial condition loss 
+stagnates near 0.76 regardless of source frequency, indicating 
+that the network converges to a smooth function that satisfies 
+the PDE approximately in the interior while failing at the 
+boundary in time. This failure is not specific to the frequencies 
+tested here. It is a consequence of the network architecture and 
+training procedure, and affects any PINN applied to wave 
+propagation problems with sharp initial conditions. Fourier 
+feature embeddings and multiscale architectures have been proposed 
+as mitigations, but their effectiveness for seismic wave equations 
+at exploration-relevant frequencies remains an open question.
+
+The second failure mode is FNO amplitude degeneracy. At 
+frequencies above 10Hz in the homogeneous medium, the maximum 
+wavefield amplitude across training samples becomes nearly 
+uniform, varying by less than 1 percent. This occurs because 
+higher-frequency wavefields carry less total energy for a fixed 
+source amplitude, and the spatial distribution of that energy 
+becomes more regular as frequency increases. When training targets 
+are near-uniform in amplitude, the absolute MSE loss surface 
+becomes flat and the optimiser stalls. This failure mode has not 
+been previously documented in the FNO literature, likely because 
+prior FNO studies have focused on fluid dynamics problems where 
+training data amplitude varies significantly across samples. It 
+represents a practical constraint on FNO applicability that is 
+independent of network architecture and requires either 
+frequency-adaptive normalisation strategies or alternative 
+training formulations.
+
+The layered model results add a third practical constraint. Even 
+at frequencies where FNO succeeds on homogeneous media, 
+performance degrades substantially when the velocity model 
+includes layer boundaries. The 36-fold increase in L2 error at 
+5Hz suggests that the FNO trained on homogeneous data learns an 
+operator that is implicitly conditioned on the absence of 
+reflections. Retraining on layered data partially addresses this 
+but does not resolve the failure at 10Hz. In realistic seismic 
+surveys, the velocity model is always heterogeneous and often 
+strongly layered. FNO would require separate training for each 
+distinct geological model, which reduces its practical advantage 
+over FD solvers that require no training at all.
+
+This study has several limitations. Experiments use grid sizes of 
+64 by 64 and 256 by 256 points, which are smaller than 
+production seismic grids that typically span 500 by 500 to 2000 
+by 2000 points. The conclusions may not hold at larger scales 
+where memory constraints and longer training times become 
+significant factors. The FNO architecture and training 
+hyperparameters were not exhaustively tuned, and it is possible 
+that alternative configurations would extend the viable frequency 
+range. The Marmousi benchmark model, widely used in the seismic 
+community for validating numerical methods, was not included in 
+this study and represents an important direction for future work. 
+Finally, only standard PINN and FNO architectures were evaluated. 
+Modified variants with Fourier feature inputs, domain 
+decomposition, or physics-constrained FNO formulations may 
+perform differently and warrant separate investigation.
+
+
+Conclusion
+
+This paper presented the first systematic three-way benchmark 
+comparing PINNs, FNOs, and finite difference solvers for the 2D 
+acoustic wave equation across the full exploration seismology 
+frequency range of 5 to 80Hz. Five findings were established. 
+Finite difference solvers are fast, accurate, and independent of 
+both frequency and velocity model complexity, solving all 
+configurations in under 25ms with machine precision. Standard 
+PINNs fail at every frequency tested due to spectral bias, 
+producing slowdowns of 1,814 to 2,909 times and amplitude errors 
+exceeding 26,000 times relative to FD. FNOs achieve 
+engineering-grade accuracy at low frequencies in homogeneous 
+media, with L2 errors below 2 percent at 5 and 10Hz. FNOs fail 
+at frequencies above 10Hz in homogeneous media due to training 
+data amplitude degeneracy, a previously undocumented failure mode. 
+FNOs degrade substantially on layered velocity models, failing 
+at 10Hz even with model-specific retraining.
+
+These results establish that no current standard neural approach 
+reliably handles the full exploration seismology frequency range 
+under realistic geological conditions. Finite difference solvers 
+remain the only robust choice for practical seismic simulation. 
+The two failure mechanisms identified here, spectral bias in 
+PINNs and amplitude degeneracy in FNOs, provide concrete targets 
+for future neural solver development. Addressing these mechanisms 
+is a necessary step toward neural surrogates that are genuinely 
+competitive with classical solvers for exploration geophysics 
+applications.
