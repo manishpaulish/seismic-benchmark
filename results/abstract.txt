@@ -1,0 +1,26 @@
+Physics-informed neural networks (PINNs) and Fourier Neural Operators
+(FNOs) have been proposed as alternatives to classical numerical solvers
+for seismic wavefield simulation, but their performance across the full
+exploration seismology frequency range of 5 to 80Hz has not been
+systematically characterised. This paper presents the first three-way
+benchmark comparing standard PINNs, FNOs, and classical finite difference
+(FD) solvers for the acoustic wave equation across five frequencies and
+two velocity models, homogeneous and horizontally layered. Five findings
+are identified. First, FD solves all frequencies in under 25ms with
+machine precision, independent of velocity model complexity. Second,
+PINNs fail at all frequencies due to spectral bias. The initial condition
+loss stagnates at 0.76 regardless of frequency, producing slowdowns of
+1,814 to 2,909 times and amplitude errors exceeding 26,000 times relative
+to FD. Third, FNOs achieve engineering-grade accuracy at low frequencies,
+with L2 error of 0.91% at 5Hz and 1.79% at 10Hz in homogeneous media.
+Fourth, FNOs fail at frequencies above 10Hz in homogeneous media due to
+training data amplitude degeneracy, a previously undocumented failure mode
+where near-uniform wavefield amplitudes across source configurations
+prevent operator learning. Fifth, FNOs degrade significantly on layered
+velocity models even at frequencies where they succeed on homogeneous
+media, with L2 error increasing 36-fold at 5Hz. These results establish
+that no current neural approach reliably handles the full 5 to 80Hz
+exploration seismology range, and provide the first systematic
+characterisation of both failure mechanisms, spectral bias in PINNs and
+amplitude degeneracy in FNOs, to guide future development of neural
+surrogates for seismic simulation.
