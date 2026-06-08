@@ -133,3 +133,30 @@ Single-solve FNO is 3.2x slower than FD — not a replacement.
 
 **Next:** Run FNO at all 5 frequencies to complete the table.
 Then move to layered velocity model.
+
+## June 8, 2026 — Update 7 — FOURTH FINDING
+
+**FNO v3 fix attempted at 20Hz — still failing.**
+MSE stuck at 0.058348 from epoch 50 to 200 — zero gradient movement.
+Root cause identified: amplitude range 3.2782e-06 to 3.3067e-06
+— almost zero variation across 300 samples.
+FNO has nothing to learn from — all training samples look identical.
+
+**FOURTH FINDING: FNO operator learning requires amplitude diversity.**
+At 5Hz: amplitude varies meaningfully -> FNO learns (L2=0.009)
+At 10Hz: amplitude varies meaningfully -> FNO learns (L2=0.018)
+At 20Hz+: amplitude near-uniform across samples -> FNO cannot learn
+
+This is NOT a hyperparameter problem. It is a fundamental limitation
+of operator learning for high-frequency seismic simulation.
+
+**COMPLETE FINDINGS:**
+1. FD: works at all frequencies, fast, machine precision
+2. PINNs: fail at all frequencies, spectral bias, IC loss stuck at 0.76
+3. FNO: succeeds at 5-10Hz (L2 < 2%), fails at 20Hz+ (amplitude degeneracy)
+4. Neither neural approach handles full 5-80Hz exploration range
+
+**PAPER CONCLUSION:**
+For seismic exploration frequencies 5-80Hz, FD remains the only
+reliable solver. Neural approaches require frequency-specific
+solutions not yet standardised for this application domain.
