@@ -203,3 +203,14 @@ Requires retraining per velocity model — major practical limitation.
 FNO's limited success in homogeneous media does not generalise
 to geologically realistic models. FD is the only reliable solver
 for practical seismic simulation.
+
+## June 8, 2026 — Update 10 — FIGURES COMPLETE
+
+**Three paper figures generated and saved:**
+- fig1_wavefield_comparison.png: FD vs FNO at 5Hz, L2=0.011
+- fig2_convergence.png: PINN IC loss stuck at 0.76, FNO converges to 0.018
+- fig3_summary.png: Runtime comparison + accuracy + slowdown + table
+
+**Paper status: READY FOR WRITING**
+All experiments complete for homogeneous + layered media.
+Three publication-quality figures saved to results/figures/.
