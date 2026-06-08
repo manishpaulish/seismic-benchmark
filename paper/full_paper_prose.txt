@@ -7,10 +7,34 @@ manishpaul.24@kgpian.iitkgp.ac.in
 
 ABSTRACT
 
+Physics-informed neural networks (PINNs) and Fourier Neural Operators
+(FNOs) have been proposed as alternatives to classical numerical solvers
+for seismic wavefield simulation, but their performance across the full
+exploration seismology frequency range of 5 to 80Hz has not been
+systematically characterised. This paper presents the first three-way
+benchmark comparing standard PINNs, FNOs, and classical finite difference
+(FD) solvers for the acoustic wave equation across five frequencies and
+two velocity models, homogeneous and horizontally layered. Five findings
+are identified. First, FD solves all frequencies in under 25ms with
+machine precision, independent of velocity model complexity. Second,
+PINNs fail at all frequencies due to spectral bias. The initial condition
+loss stagnates at 0.76 regardless of frequency, producing slowdowns of
+1,814 to 2,909 times and amplitude errors exceeding 26,000 times relative
+to FD. Third, FNOs achieve engineering-grade accuracy at low frequencies,
+with L2 error of 0.91% at 5Hz and 1.79% at 10Hz in homogeneous media.
+Fourth, FNOs fail at frequencies above 10Hz in homogeneous media due to
+training data amplitude degeneracy, a previously undocumented failure mode
+where near-uniform wavefield amplitudes across source configurations
+prevent operator learning. Fifth, FNOs degrade significantly on layered
+velocity models even at frequencies where they succeed on homogeneous
+media, with L2 error increasing 36-fold at 5Hz. These results establish
+that no current neural approach reliably handles the full 5 to 80Hz
+exploration seismology range, and provide the first systematic
+characterisation of both failure mechanisms, spectral bias in PINNs and
+amplitude degeneracy in FNOs, to guide future development of neural
+surrogates for seismic simulation.
 
 1. INTRODUCTION
-
-Introduction
 
 Seismic wavefield simulation is a computational bottleneck in exploration geophysics. Full waveform inversion, the leading method for subsurface velocity model estimation, requires solving the wave equation thousands of times per survey to match observed seismic data with synthetic predictions. At exploration-relevant frequencies of 5 to 80Hz and domain sizes of kilometres, each finite difference solve takes seconds to minutes on production hardware, making the total inversion computationally expensive. The search for faster solvers that maintain physical accuracy has driven significant interest in neural network approaches.
 
@@ -25,8 +49,6 @@ This paper addresses that gap by presenting the first three-way benchmark compar
 The paper is organised as follows. Section 2 describes the three solvers, the velocity models, and the evaluation metrics. Section 3 presents experimental results across all frequency and velocity model combinations. Section 4 discusses the failure mechanisms identified and their implications for future neural solver development. Section 5 concludes.
 
 2. RELATED WORK
-
-Related Work
 
 Numerical Methods for Seismic Simulation
 
@@ -106,8 +128,6 @@ across the full 5 to 80Hz exploration range.
 
 3. METHODOLOGY
 
-Methodology
-
 Acoustic Wave Equation
 
 All solvers target the 2D acoustic wave equation:
@@ -181,8 +201,6 @@ Summary
 FD solves every frequency in under 25ms with machine precision and shows no dependence on velocity model complexity. PINNs fail at every frequency tested with slowdowns exceeding 1,800 times. FNOs succeed only in a narrow regime: frequencies below 15Hz in homogeneous media with sufficient training data amplitude diversity. Outside this regime, FNO fails due to amplitude degeneracy, a failure mode that is mechanistically distinct from PINN spectral bias but equally limiting in practice.
 
 5. DISCUSSION AND CONCLUSION
-
-Discussion
 
 The results reveal two mechanistically distinct failure modes that 
 limit the applicability of neural approaches to seismic wavefield 
