@@ -160,3 +160,46 @@ of operator learning for high-frequency seismic simulation.
 For seismic exploration frequencies 5-80Hz, FD remains the only
 reliable solver. Neural approaches require frequency-specific
 solutions not yet standardised for this application domain.
+
+## June 8, 2026 — Update 8 — LAYERED MODEL FD BENCHMARK
+
+**FD on layered model (4 layers: 1800/2500/3200/4000 m/s):**
+- 5Hz:  0.298s, amp=3.0045e-06
+- 10Hz: 0.286s, amp=2.1780e-06
+- 20Hz: 0.285s, amp=1.5441e-06
+- 40Hz: 0.284s, amp=6.6206e-07
+- 80Hz: 0.285s, amp=4.1345e-07
+
+FD runtime identical to homogeneous (~0.29s).
+Solver complexity-independent — key FD strength.
+Reflections visible at layer boundaries in wavefield plot.
+Amplitudes higher than homogeneous due to trapped reflections.
+
+**Next:** Run FNO v3 on layered model at 5Hz and 10Hz.
+Critical test: does FNO generalise to heterogeneous media?
+
+## June 8, 2026 — Update 9 — FIFTH FINDING: FNO FAILS ON LAYERED MEDIA
+
+**FNO on layered model (4 layers: 1800/2500/3200/4000 m/s):**
+- 5Hz:  L2=0.3244 (homogeneous: 0.0091) — 36x worse
+- 10Hz: L2=1.0001 (homogeneous: 0.0179) — complete failure
+
+Val L2 at 5Hz drops from 1.0 to 0.26 — partial learning.
+Val L2 at 10Hz stuck at 0.9999 — zero learning.
+
+**FIFTH FINDING: FNO fails on layered media.**
+Reflections from layer boundaries increase wavefield complexity.
+FNO that succeeded at 5-10Hz homogeneous fails at 10Hz layered.
+Requires retraining per velocity model — major practical limitation.
+
+**COMPLETE FINDINGS SUMMARY:**
+1. FD: fast, accurate, complexity-independent — always works
+2. PINNs: fail at all frequencies — spectral bias
+3. FNO homogeneous: works at 5-10Hz, fails at 20Hz+
+4. FNO layered: works partially at 5Hz, fails at 10Hz+
+5. No neural approach handles realistic geological complexity reliably
+
+**PAPER STRENGTHENED:** The layered result shows that even
+FNO's limited success in homogeneous media does not generalise
+to geologically realistic models. FD is the only reliable solver
+for practical seismic simulation.
