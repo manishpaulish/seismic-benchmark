@@ -98,3 +98,38 @@ The failure is not frequency-dependent — it is fundamental.
 
 **Next session:** Implement FNO and run same benchmark.
 FNO expected to perform significantly better.
+
+## June 8, 2026 — Update 6 — THREE-WAY COMPARISON COMPLETE
+
+**FNO results at 10Hz:**
+- Training time: 824.3s (one-time cost)
+- Inference time: 70.66ms (avg over 10 runs)
+- FD solve time: 21.88ms
+- FNO L2 error: 0.0179 (1.79% relative error)
+- FNO slowdown vs FD: 3.2x (single solve)
+- FNO speedup vs PINN: 8549x
+
+**Training convergence (healthy):**
+- Epoch 50:  Val L2 = 0.0613
+- Epoch 100: Val L2 = 0.0354
+- Epoch 150: Val L2 = 0.0213
+- Epoch 200: Val L2 = 0.0177
+
+**COMPLETE THREE-WAY TABLE AT 10Hz:**
+| Method | Time      | L2 Error | Status        |
+|--------|-----------|----------|---------------|
+| FD     | 21.88ms   | 0        | Reference     |
+| FNO    | 70.66ms   | 0.0179   | Works well    |
+| PINN   | 604,100ms | ~74      | Fails         |
+
+**Three findings confirmed:**
+1. PINNs fail at ALL frequencies (fundamental failure)
+2. FNO achieves 1.79% L2 error — engineering-grade accuracy
+3. FNO is 8549x faster than PINN with 4000x better accuracy
+
+**Key insight for paper:** FNO's value is in multi-solve scenarios
+(FWI, UQ, parameter sweeps) where training cost amortises.
+Single-solve FNO is 3.2x slower than FD — not a replacement.
+
+**Next:** Run FNO at all 5 frequencies to complete the table.
+Then move to layered velocity model.
